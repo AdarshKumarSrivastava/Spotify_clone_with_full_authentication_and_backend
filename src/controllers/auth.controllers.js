@@ -43,40 +43,42 @@ async function registerUser(req, res) {
             role: user.role
         }
     });
-    async function loginUser(req, res) {
-        const { email, password } = req.body;
+}
 
-        const user = await userModel.findOne({ email });
+async function loginUser(req, res) {
+    const { email, password } = req.body;
 
-        if (!user) {
-            return res.status(401).json({
-                message: "Invalid email or password"
-            });
-        }
+    const user = await userModel.findOne({ email });
 
-        const isPasswordCorrect = await bcrypt.compare(password, user.password);
-
-        if (!isPasswordCorrect) {
-            return res.status(401).json({
-                message: "Invalid email or password"
-            });
-        }
-
-        const token = jwt.sign({
-            id: user.id,
-            role: user.role,
-        }, process.env.JWT_SECRET);
-
-        res.cookie("token", token);
-        res.status(200).json({
-            message: "User logged in successfully",
-            user: {
-                id: user.id,
-                username: user.username,
-                email: user.email,
-                role: user.role
-            }
+    if (!user) {
+        return res.status(401).json({
+            message: "Invalid email or password"
         });
     }
+
+    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordCorrect) {
+        return res.status(401).json({
+            message: "Invalid email or password"
+        });
+    }
+
+    const token = jwt.sign({
+        id: user.id,
+        role: user.role,
+    }, process.env.JWT_SECRET);
+
+    res.cookie("token", token);
+    res.status(200).json({
+        message: "User logged in successfully",
+        user: {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            role: user.role
+        }
+    });
 }
-module.exports = { registerUser, loginUser }
+
+module.exports = { registerUser }
