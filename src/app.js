@@ -4,7 +4,7 @@ const authRoutes = require('./routes/auth.routes');
 const musicRoutes = require('./routes/music.routes');
 
 const app = express();
-
+// use it like this
 app.use(express.json());
 app.use(cookieParser());
 
