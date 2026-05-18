@@ -3,6 +3,7 @@ const albumModel = require("../models/album.model");
 const jwt = require("jsonwebtoken");
 const { uploadFile } = require("../services/storage.service");
 
+// function for creating music 
 async function createMusic(req, res) {
     const { file, title } = req.body;
     const result = await uploadFile(file.buffer.toString("base64"), file.originalname);
