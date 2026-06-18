@@ -44,6 +44,7 @@ async function registerUser(req, res) {
         }
     });
 }
+//function for login of users
 
 async function loginUser(req, res) {
     const { email, password } = req.body;
