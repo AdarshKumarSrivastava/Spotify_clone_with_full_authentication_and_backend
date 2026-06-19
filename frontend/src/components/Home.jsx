@@ -1,20 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Play, Heart, MoreHorizontal, Search, Home as HomeIcon, Library } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-const Sidebar = ({ currentView, setCurrentView }) => (
-  <div className="glass-panel" style={{ width: '280px', height: '100%', padding: '24px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
-    <div style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--color-text-main)', display: 'flex', alignItems: 'center', gap: '12px' }}>
-      <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--color-spotify-green)' }} />
-      SpoTify 3.0
+const Sidebar = ({ currentView, setCurrentView }) => {
+  const nav = useNavigate();
+  return (
+    <div className="glass-panel" style={{ width: '280px', height: '100%', padding: '24px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+      <div style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--color-text-main)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--color-spotify-green)' }} />
+        SpoTify 3.0
+      </div>
+      <nav style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
+        <motion.button whileHover={{ x: 8, color: '#1ed760' }} onClick={() => setCurrentView('home')} className="custom-cursor-target" style={{ background: 'none', border: 'none', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '16px', color: currentView === 'home' ? 'var(--color-text-main)' : 'var(--color-text-muted)', textDecoration: 'none', fontWeight: 500, fontSize: '1.1rem', transition: 'color 0.3s', cursor: 'pointer' }}><HomeIcon /> Home</motion.button>
+        <motion.button whileHover={{ x: 8, color: '#1ed760' }} onClick={() => setCurrentView('search')} className="custom-cursor-target" style={{ background: 'none', border: 'none', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '16px', color: currentView === 'search' ? 'var(--color-text-main)' : 'var(--color-text-muted)', textDecoration: 'none', fontWeight: 500, fontSize: '1.1rem', transition: 'color 0.3s', cursor: 'pointer' }}><Search /> Search</motion.button>
+        <motion.button whileHover={{ x: 8, color: '#1ed760' }} onClick={() => setCurrentView('library')} className="custom-cursor-target" style={{ background: 'none', border: 'none', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '16px', color: currentView === 'library' ? 'var(--color-text-main)' : 'var(--color-text-muted)', textDecoration: 'none', fontWeight: 500, fontSize: '1.1rem', transition: 'color 0.3s', cursor: 'pointer' }}><Library /> Your Library</motion.button>
+      </nav>
+      <motion.button whileHover={{ x: 8, color: '#ff3366' }} onClick={() => nav('/login')} className="custom-cursor-target" style={{ background: 'none', border: 'none', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '16px', color: 'var(--color-text-muted)', textDecoration: 'none', fontWeight: 500, fontSize: '1.1rem', transition: 'color 0.3s', cursor: 'pointer', marginTop: 'auto' }}>Logout</motion.button>
     </div>
-    <nav style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      <button onClick={() => setCurrentView('home')} className="custom-cursor-target" style={{ background: 'none', border: 'none', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '16px', color: currentView === 'home' ? 'var(--color-text-main)' : 'var(--color-text-muted)', textDecoration: 'none', fontWeight: 500, fontSize: '1.1rem', transition: 'color 0.3s' }}><HomeIcon /> Home</button>
-      <button onClick={() => setCurrentView('search')} className="custom-cursor-target" style={{ background: 'none', border: 'none', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '16px', color: currentView === 'search' ? 'var(--color-text-main)' : 'var(--color-text-muted)', textDecoration: 'none', fontWeight: 500, fontSize: '1.1rem', transition: 'color 0.3s' }}><Search /> Search</button>
-      <button onClick={() => setCurrentView('library')} className="custom-cursor-target" style={{ background: 'none', border: 'none', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '16px', color: currentView === 'library' ? 'var(--color-text-main)' : 'var(--color-text-muted)', textDecoration: 'none', fontWeight: 500, fontSize: '1.1rem', transition: 'color 0.3s' }}><Library /> Your Library</button>
-    </nav>
-  </div>
-);
+  );
+};
 
 const AlbumCard = ({ title, artist, image, color, delay }) => {
   return (

@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Preloader from './components/Preloader';
 import Home from './components/Home';
 import MusicPlayer from './components/MusicPlayer';
+import Login from './components/Login';
+import Register from './components/Register';
+import ArtistDashboard from './components/ArtistDashboard';
 
 const CustomCursor = () => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -44,19 +48,27 @@ function App() {
   };
 
   return (
-    <>
+    <Router>
       <CustomCursor />
       <AnimatePresence mode="wait">
         {loading ? (
           <Preloader key="preloader" onComplete={handlePreloaderComplete} />
         ) : (
-          <React.Fragment key="main-app">
-            <Home />
-            <MusicPlayer />
-          </React.Fragment>
+          <Routes key="main-app">
+            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/user" element={
+              <React.Fragment>
+                <Home />
+                <MusicPlayer />
+              </React.Fragment>
+            } />
+            <Route path="/artist" element={<ArtistDashboard />} />
+          </Routes>
         )}
       </AnimatePresence>
-    </>
+    </Router>
   );
 }
 

@@ -1,286 +1,239 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { MeshTransmissionMaterial, Center, Sparkles, Text, RoundedBox, Environment, Lightformer } from '@react-three/drei';
-import * as THREE from 'three';
-import gsap from 'gsap';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useEffect, useRef, useState } from 'react';
+import './Preloader.css';
 
-// --- Spotify Branding ---
-const SpotifyLogoImage = () => {
-  const [texture, setTexture] = useState(null);
+export default function Preloader({ onComplete }) {
+  const preloaderRef = useRef(null);
+  const fillRef = useRef(null);
+  const pctRef = useRef(null);
+  const sceneRef = useRef(null);
+  const [done, setDone] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
+
   useEffect(() => {
-    const loader = new THREE.TextureLoader();
-    loader.load('/images/spotify.png', (tex) => {
-      tex.colorSpace = THREE.SRGBColorSpace;
-      setTexture(tex);
-    });
+    const preloader = preloaderRef.current;
+    if (!preloader) return;
+
+    for (let i = 0; i < 24; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      const size = Math.random() * 4 + 2;
+      const green = Math.random() > 0.4;
+      p.style.cssText = `
+        width: ${size}px;
+        height: ${size}px;
+        left: ${15 + Math.random() * 70}%;
+        bottom: ${8 + Math.random() * 35}%;
+        background: ${green
+          ? `rgba(29,215,96,${0.4 + Math.random() * 0.4})`
+          : `rgba(120,255,150,${0.2 + Math.random() * 0.3})`};
+        animation-duration: ${3.5 + Math.random() * 4.5}s;
+        animation-delay: ${Math.random() * 5}s;
+        box-shadow: 0 0 ${size * 2}px ${green ? 'rgba(29,215,96,0.6)' : 'rgba(150,255,160,0.4)'};
+      `;
+      preloader.appendChild(p);
+    }
+
+    return () => {
+      const particles = preloader.querySelectorAll('.particle');
+      particles.forEach(p => p.remove());
+    };
   }, []);
 
-  if (!texture) return null;
-  return (
-    <mesh position={[0.4, 0, 0]} scale={0.6}>
-      <planeGeometry args={[1, 1]} />
-      <meshBasicMaterial map={texture} transparent={true} />
-    </mesh>
-  );
-};
-
-// --- SafeTexture for Albums ---
-const SafeTexture = ({ url, color, title }) => {
-  const [texture, setTexture] = useState(null);
-
   useEffect(() => {
-    if (!url) return;
-    const loader = new THREE.TextureLoader();
-    loader.setCrossOrigin('anonymous');
-    loader.load(
-      url,
-      (tex) => {
-        tex.colorSpace = THREE.SRGBColorSpace;
-        setTexture(tex);
-      },
-      undefined,
-      (err) => console.warn("Failed to load texture, falling back to color", err)
-    );
-  }, [url]);
+    let progress = 0;
+    let isDone = false;
+    let frameId;
+    const fill = fillRef.current;
+    const pct = pctRef.current;
 
-  if (texture) {
-    return <meshStandardMaterial map={texture} roughness={0.2} metalness={0.1} />;
-  }
+    const milestones = [
+      { target: 30,  duration: 600  },
+      { target: 58,  duration: 700  },
+      { target: 75,  duration: 500  },
+      { target: 89,  duration: 600  },
+      { target: 100, duration: 500  },
+    ];
 
-  return (
-    <>
-      <meshStandardMaterial color={color} roughness={0.4} />
-      <Text position={[0, 0, 0.01]} fontSize={0.25} color="white" maxWidth={1.5} textAlign="center" anchorX="center" anchorY="middle">
-        {title}
-      </Text>
-    </>
-  );
-};
+    function animateTo(target, duration, callback) {
+      const start = progress;
+      const startTime = performance.now();
 
-// --- Emerging Album Cards ---
-const FloatingAlbum = ({ position, targetPosition, rotation, targetRotation, color, title, url, delay, timeline }) => {
-  const ref = useRef();
+      function tick(now) {
+        if(isDone) return;
+        const elapsed = now - startTime;
+        const t = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - t, 3);
+        progress = start + (target - start) * eased;
 
-  useEffect(() => {
-    if (timeline && ref.current) {
-      timeline.fromTo(ref.current.position,
-        { x: position[0], y: position[1], z: position[2] },
-        { x: targetPosition[0], y: targetPosition[1], z: targetPosition[2], duration: 1.8, ease: "power3.out" },
-        delay
-      );
-      timeline.fromTo(ref.current.rotation,
-        { x: rotation[0], y: rotation[1], z: rotation[2] },
-        { x: targetRotation[0], y: targetRotation[1], z: targetRotation[2], duration: 1.8, ease: "power3.out" },
-        delay
-      );
+        if (fill) fill.style.width = progress + '%';
+        if (pct) pct.textContent = Math.round(progress) + '%';
+
+        if (t < 1) {
+          frameId = requestAnimationFrame(tick);
+        } else {
+          progress = target;
+          if (fill) fill.style.width = target + '%';
+          if (pct) pct.textContent = target + '%';
+          if (callback) callback();
+        }
+      }
+      frameId = requestAnimationFrame(tick);
     }
-  }, [timeline, position, targetPosition, rotation, targetRotation, delay]);
 
-  return (
-    <group ref={ref} position={position} rotation={rotation}>
-      <RoundedBox args={[1.8, 1.8, 0.05]} radius={0.1} smoothness={4} castShadow>
-        <meshStandardMaterial color="#111" roughness={0.5} />
-      </RoundedBox>
-      <mesh position={[0, 0, 0.026]}>
-        <planeGeometry args={[1.7, 1.7]} />
-        <SafeTexture url={url} color={color} title={title} />
-      </mesh>
-    </group>
-  );
-};
-
-
-// --- Main Glass Folder ---
-const GlassFolder = ({ timeline }) => {
-  const folderRef = useRef();
-
-  useEffect(() => {
-    if (timeline && folderRef.current) {
-      // Folder entrance
-      timeline.fromTo(folderRef.current.position,
-        { y: -4, z: -2 },
-        { y: 0, z: 0, duration: 2, ease: "power3.out" },
-        0
-      );
-      timeline.fromTo(folderRef.current.rotation,
-        { x: 0.5, y: -Math.PI / 4, z: -0.2 },
-        { x: 0, y: 0, z: 0, duration: 2, ease: "power3.out" },
-        0
-      );
+    function runMilestones(index) {
+      if (index >= milestones.length) {
+        finishLoading();
+        return;
+      }
+      const m = milestones[index];
+      animateTo(m.target, m.duration, () => {
+        const pause = index < milestones.length - 1 ? 80 + Math.random() * 120 : 0;
+        setTimeout(() => runMilestones(index + 1), pause);
+      });
     }
-  }, [timeline]);
 
-  useFrame((state) => {
-    const t = state.clock.getElapsedTime();
-    if (folderRef.current) {
-      folderRef.current.position.y += Math.sin(t) * 0.001; // subtle breathing
-      folderRef.current.rotation.y = Math.sin(t * 0.5) * 0.03;
-      folderRef.current.rotation.x = Math.cos(t * 0.5) * 0.03;
+    function finishLoading() {
+      if (isDone) return;
+      isDone = true;
+      setDone(true);
+      setShowWelcome(true); // Fade in the welcome screen behind the 3D scene
+      
+      setTimeout(() => {
+        if (preloaderRef.current) {
+          preloaderRef.current.classList.add('hide'); // Hide 3D scene to reveal welcome screen
+        }
+        setTimeout(() => {
+          setShowWelcome(false); // Fade out the welcome screen
+          setTimeout(() => {
+            if (onComplete) onComplete();
+          }, 1000); // Wait for welcome screen to fade out before showing main app
+        }, 2000); // Show welcome text for 2 seconds
+      }, 500);
     }
-  });
 
-  return (
-    <group ref={folderRef} position={[0, -4, -2]} rotation={[0.5, -Math.PI / 4, -0.2]}>
-      {/* Back Panel */}
-      <RoundedBox position={[0, 0, -0.3]} args={[4.2, 3.2, 0.1]} radius={0.15} smoothness={4} castShadow>
-        <MeshTransmissionMaterial
-          thickness={0.5}
-          roughness={0.2}
-          transmission={1}
-          ior={1.5}
-          color="#0e5927"
-          attenuationColor="#1DB954"
-          attenuationDistance={1}
-          transparent={true}
-          opacity={0.9}
-        />
-      </RoundedBox>
+    const timer = setTimeout(() => runMilestones(0), 200);
 
-      {/* Emerging Albums */}
-      <FloatingAlbum
-        position={[-0.5, -1, -0.1]} targetPosition={[-1.2, 1.8, -0.15]}
-        rotation={[0, 0, 0]} targetRotation={[0, 0.1, 0.15]}
-        color="#ff3366" title="Karan Aujla" url="https://sadgirldp.com/karan-aujla-pics/" delay={0.8} timeline={timeline}
-      />
-      <FloatingAlbum
-        position={[0.5, -1, -0.1]} targetPosition={[1.2, 1.8, -0.15]}
-        rotation={[0, 0, 0]} targetRotation={[0, -0.1, -0.15]}
-        color="#33ccff" title="Honey Singh" url="https://en.wikipedia.org/wiki/Yo_Yo_Honey_Singh" delay={1.0} timeline={timeline}
-      />
-      {/* Center album is largest and in front */}
-      <FloatingAlbum
-        position={[0, -1, 0]} targetPosition={[0, 2.4, 0.05]}
-        rotation={[0, 0, 0]} targetRotation={[0, 0, 0]}
-        color="#ffcc00" title="Diljit Dosanjh" url="https://in.pinterest.com/parinwalia/diljit-dosanjh/" delay={1.2} timeline={timeline}
-      />
-
-      {/* Front Panel (Angled slightly open) */}
-      <RoundedBox position={[0, -0.2, 0.3]} rotation={[0.15, 0, 0]} args={[4.4, 3, 0.05]} radius={0.15} smoothness={4} castShadow>
-        <MeshTransmissionMaterial
-          thickness={0.2}
-          roughness={0.1}
-          transmission={0.95}
-          ior={1.4}
-          color="#1ED760"
-          attenuationColor="#ffffff"
-          attenuationDistance={2}
-          clearcoat={1}
-          clearcoatRoughness={0.1}
-          transparent={true}
-          opacity={1}
-        />
-
-        {/* Embedded Spotify Branding */}
-        <group position={[0, -0.8, 0.03]} scale={0.8}>
-          <SpotifyLogoImage />
-          <React.Suspense fallback={null}>
-            <Text fontSize={0.5} color="white" anchorX="right" anchorY="middle" position={[-0.1, 0, 0]} letterSpacing={-0.05} fontWeight="bold">
-              Spotify - AS
-            </Text>
-          </React.Suspense>
-        </group>
-      </RoundedBox>
-    </group>
-  );
-};
-
-// --- 3D Scene Assembly ---
-const Scene = ({ onComplete }) => {
-  const [timeline, setTimeline] = useState(null);
-  const mainGroup = useRef();
-
-  useEffect(() => {
-    // Create master timeline
-    const tl = gsap.timeline();
-    setTimeline(tl);
-
-    // After animations, hold for a moment then transition out
-    tl.to({}, { duration: 5.5 }); // Keep scene active for 5.5 seconds total
-
-    // Exit animation
-    tl.to(mainGroup.current.position, { y: 2, duration: 1.2, ease: "power3.inOut" }, "exit")
-      .to(mainGroup.current.scale, { x: 0.8, y: 0.8, z: 0.8, duration: 1.2, ease: "power3.inOut" }, "exit")
-      .to(mainGroup.current.rotation, { x: -0.2, duration: 1.2, ease: "power3.inOut" }, "exit");
-
-    tl.call(() => {
-      if (onComplete) onComplete();
-    });
-
-    return () => tl.kill();
+    return () => {
+      clearTimeout(timer);
+      cancelAnimationFrame(frameId);
+    };
   }, [onComplete]);
 
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (done || !sceneRef.current) return;
+      const cx = window.innerWidth / 2;
+      const cy = window.innerHeight / 2;
+      const dx = (e.clientX - cx) / cx;
+      const dy = (e.clientY - cy) / cy;
+
+      sceneRef.current.style.transform = `translateY(-38px) rotateX(${-dy * 6}deg) rotateY(${dx * 6}deg)`;
+
+      const cards = preloaderRef.current?.querySelectorAll('.album-card');
+      cards?.forEach((card, i) => {
+        const depth = (i + 1) * 3;
+        card.style.transform = `translate(${dx * depth}px, ${dy * depth}px)`;
+      });
+    };
+
+    const handleMouseLeave = () => {
+      if (sceneRef.current) {
+        sceneRef.current.style.transform = '';
+      }
+      const cards = preloaderRef.current?.querySelectorAll('.album-card');
+      cards?.forEach(card => {
+        card.style.transform = '';
+      });
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseleave', handleMouseLeave);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseleave', handleMouseLeave);
+    };
+  }, [done]);
+
   return (
     <>
-      <ambientLight intensity={0.5} />
-      {/* Volumetric Green Cinematic Lighting */}
-      <pointLight position={[0, 0, 2]} color="#1ED760" intensity={1} distance={10} />
-      <spotLight position={[5, 10, 5]} angle={0.5} penumbra={1} intensity={10} color="#1ED760" castShadow />
-      <spotLight position={[-5, 10, -5]} angle={0.5} penumbra={1} intensity={5} color="#ffffff" />
+      <div className={`welcome-screen ${showWelcome ? 'show' : ''}`}>
+        <p className="demo-text">
+          <span className="welcome-part">Welcome to</span>
+          <span className="spotify-part">Spotify</span>
+        </p>
+      </div>
 
-      {/* Dynamic Environment map for realistic glass reflections without external CDN downloads */}
-      <Environment resolution={256}>
-        <group rotation={[-Math.PI / 4, -0.3, 0]}>
-          <Lightformer form="rect" intensity={4} color="#1ED760" position={[0, 5, -10]} scale={[20, 10, 1]} />
-          <Lightformer form="rect" intensity={2} color="#ffffff" position={[-10, 5, 0]} scale={[20, 10, 1]} />
-          <Lightformer form="circle" intensity={3} color="#1ED760" position={[10, 5, 0]} scale={[10, 10, 1]} />
-        </group>
-      </Environment>
+      <div id="preloader" ref={preloaderRef}>
+        <div className="glow-orb"></div>
+        <div className="glow-orb-2"></div>
 
-      <group ref={mainGroup}>
-        <GlassFolder timeline={timeline} />
-      </group>
-
-      <Sparkles count={150} scale={12} size={2} speed={0.2} opacity={0.3} color="#1ED760" />
-      <Sparkles count={50} scale={10} size={4} speed={0.1} opacity={0.1} color="#ffffff" />
-    </>
-  );
-};
-
-// --- Main Component ---
-export default function Preloader({ onComplete }) {
-  const [isExiting, setIsExiting] = useState(false);
-
-  const handleComplete = () => {
-    setIsExiting(true);
-    setTimeout(() => {
-      onComplete();
-    }, 1000); // Wait for CSS fade out
-  };
-
-  return (
-    <AnimatePresence>
-      {!isExiting && (
-        <motion.div
-          className="preloader-container"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 1, ease: "easeInOut" }}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
-            background: 'radial-gradient(circle at center, #0a1f11 0%, #020804 100%)',
-            zIndex: 9999,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            overflow: 'hidden'
-          }}
-        >
-          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
-            <Canvas shadows dpr={[1, 2]} camera={{ position: [0, 0, 7.5], fov: 45 }}>
-              <React.Suspense fallback={null}>
-                <Scene onComplete={handleComplete} />
-              </React.Suspense>
-            </Canvas>
+      <div className="scene" ref={sceneRef}>
+        <div className="cards-container">
+          <div className="album-card card-1">
+            <div className="art-1">
+              <div className="face-circle"></div>
+              <div className="card-title">Big Brulee</div>
+            </div>
           </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          <div className="album-card card-2">
+            <div className="art-2">
+              <div className="illum-text">Illuminati</div>
+              <div className="tri"></div>
+              <div className="figure">
+                <div className="figure-shape"></div>
+              </div>
+              <div className="card-title">Badshah · Dazzer</div>
+            </div>
+          </div>
+          <div className="album-card card-3">
+            <div className="art-3">
+              <div className="face-shape"></div>
+              <div className="card-title">Dazzer</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="folder-wrap">
+          <div className="folder-tab"></div>
+          <div className="folder-body">
+            <div className="folder-shimmer"></div>
+            <div className="spotify-brand">
+              <div className="sp-icon">
+                <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.586 14.424a.622.622 0 01-.857.207c-2.348-1.435-5.304-1.76-8.785-.964a.623.623 0 01-.277-1.215c3.809-.87 7.076-.496 9.712 1.115a.623.623 0 01.207.857zm1.223-2.722a.78.78 0 01-1.072.257c-2.687-1.652-6.785-2.131-9.965-1.166a.78.78 0 01-.973-.519.781.781 0 01.519-.972c3.632-1.102 8.147-.568 11.234 1.328a.78.78 0 01.257 1.072zm.105-2.835C14.692 8.95 9.375 8.775 6.297 9.71a.937.937 0 11-.543-1.79c3.527-1.072 9.396-.865 13.105 1.338a.937.937 0 01-.945 1.609z"/>
+                </svg>
+              </div>
+              <span className="sp-wordmark">spotify</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="reflection"></div>
+      </div>
+
+      <div className="cursor-arrow">
+        <svg viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="arrowGrad" x1="6" y1="4" x2="44" y2="50" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="rgba(180,255,200,0.5)"/>
+              <stop offset="100%" stopColor="rgba(29,185,84,0.05)"/>
+            </linearGradient>
+          </defs>
+          <path d="M10 8L44 26L26 31L17 47L10 8Z" fill="rgba(0,0,0,0.3)" transform="translate(2,3)"/>
+          <path d="M10 8L44 26L26 31L17 47L10 8Z" fill="rgba(90,230,130,0.92)" stroke="rgba(150,255,170,0.55)" strokeWidth="1.5" strokeLinejoin="round"/>
+          <path d="M10 8L44 26L26 31L17 47L10 8Z" fill="url(#arrowGrad)"/>
+        </svg>
+      </div>
+
+      <div className="loader-ui">
+        <div className="loader-label">Loading</div>
+        <div className="loader-track">
+          <div className="loader-fill" id="loaderFill" ref={fillRef}></div>
+        </div>
+        <div className="loader-percent" id="loaderPercent" ref={pctRef}>0%</div>
+      </div>
+    </div>
+    </>
   );
 }
