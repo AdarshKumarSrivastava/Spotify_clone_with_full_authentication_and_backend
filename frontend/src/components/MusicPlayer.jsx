@@ -1,19 +1,32 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Play, Pause, SkipBack, SkipForward, Volume2, Maximize2, Repeat, Shuffle } from 'lucide-react';
 
 export default function MusicPlayer() {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef(null);
+
+  const togglePlay = () => {
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play();
+    }
+    setIsPlaying(!isPlaying);
+  };
+
   return (
-    <motion.div 
-      initial={{ y: 100, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
+    <>
+      <audio ref={audioRef} src="/music/song1.mp3" loop />
+      <motion.div 
+      initial={{ y: 100, x: "-50%", opacity: 0 }}
+      animate={{ y: 0, x: "-50%", opacity: 1 }}
       transition={{ delay: 2, duration: 0.8, type: 'spring', stiffness: 100 }}
       className="glass-panel"
       style={{
         position: 'fixed',
         bottom: '24px',
         left: '50%',
-        transform: 'translateX(-50%)',
         width: 'calc(100% - 48px)',
         height: '90px',
         display: 'flex',
@@ -29,7 +42,7 @@ export default function MusicPlayer() {
     >
       {/* Current Track Info */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', width: '30%' }}>
-        <div style={{ width: '56px', height: '56px', borderRadius: '10px', background: 'linear-gradient(135deg, #ff3366 0%, #111 100%)', boxShadow: '0 4px 12px rgba(255, 51, 102, 0.3)' }} />
+        <div style={{ width: '56px', height: '56px', borderRadius: '10px', background: 'url(https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=200&h=200) center/cover', boxShadow: '0 4px 12px rgba(255, 51, 102, 0.3)' }} />
         <div>
           <h4 style={{ fontSize: '1rem', fontWeight: 600, margin: 0, color: 'var(--color-text-main)' }}>Midnight City</h4>
           <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', margin: 0 }}>M83</p>
@@ -37,17 +50,22 @@ export default function MusicPlayer() {
       </div>
 
       {/* Controls */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', width: '40%' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', position: 'absolute', left: '50%', transform: 'translateX(-50%)', width: '40%', maxWidth: '500px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
           <Shuffle size={20} color="var(--color-text-muted)" style={{ cursor: 'pointer' }} />
           <SkipBack size={24} color="var(--color-text-main)" style={{ cursor: 'pointer' }} />
           <motion.div 
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            className="neon-glow"
+            className="neon-glow custom-cursor-target"
             style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--color-spotify-green)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+            onClick={togglePlay}
           >
-            <Play size={20} color="#000" fill="#000" style={{ marginLeft: '4px' }} />
+            {isPlaying ? (
+              <Pause size={20} color="#000" fill="#000" />
+            ) : (
+              <Play size={20} color="#000" fill="#000" style={{ marginLeft: '4px' }} />
+            )}
           </motion.div>
           <SkipForward size={24} color="var(--color-text-main)" style={{ cursor: 'pointer' }} />
           <Repeat size={20} color="var(--color-text-muted)" style={{ cursor: 'pointer' }} />
@@ -70,5 +88,6 @@ export default function MusicPlayer() {
         <Maximize2 size={20} color="var(--color-text-muted)" style={{ cursor: 'pointer' }} />
       </div>
     </motion.div>
+    </>
   );
 }
