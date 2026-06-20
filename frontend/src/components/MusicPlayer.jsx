@@ -1,23 +1,15 @@
 import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Play, Pause, SkipBack, SkipForward, Volume2, Maximize2, Repeat, Shuffle } from 'lucide-react';
+import { usePlayer } from '../context/PlayerContext';
 
 export default function MusicPlayer() {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const audioRef = useRef(null);
+  const { currentSong, isPlaying, togglePlay } = usePlayer();
 
-  const togglePlay = () => {
-    if (isPlaying) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play();
-    }
-    setIsPlaying(!isPlaying);
-  };
+  if (!currentSong) return null;
 
   return (
     <>
-      <audio ref={audioRef} src="/music/song1.mp3" loop />
       <motion.div 
       initial={{ y: 100, x: "-50%", opacity: 0 }}
       animate={{ y: 0, x: "-50%", opacity: 1 }}
@@ -42,10 +34,10 @@ export default function MusicPlayer() {
     >
       {/* Current Track Info */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', width: '30%' }}>
-        <div style={{ width: '56px', height: '56px', borderRadius: '10px', background: 'url(https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=200&h=200) center/cover', boxShadow: '0 4px 12px rgba(255, 51, 102, 0.3)' }} />
+        <div style={{ width: '56px', height: '56px', borderRadius: '10px', background: `url(${currentSong.image}) center/cover`, boxShadow: '0 4px 12px rgba(255, 51, 102, 0.3)' }} />
         <div>
-          <h4 style={{ fontSize: '1rem', fontWeight: 600, margin: 0, color: 'var(--color-text-main)' }}>Midnight City</h4>
-          <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', margin: 0 }}>M83</p>
+          <h4 style={{ fontSize: '1rem', fontWeight: 600, margin: 0, color: 'var(--color-text-main)' }}>{currentSong.title}</h4>
+          <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', margin: 0 }}>{currentSong.artist}</p>
         </div>
       </div>
 

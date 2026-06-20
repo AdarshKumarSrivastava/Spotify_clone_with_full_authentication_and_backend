@@ -1,91 +1,132 @@
-const userModel = require("../models/user.models");
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcrypt");
+const User = require("../models/user.models");
+const { ApiError } = require("../utils/ApiError");
+const { ApiResponse } = require("../utils/ApiResponse");
+const { asyncHandler } = require("../utils/asyncHandler");
 
+const generateAccessAndRefreshTokens = async (userId) => {
+    try {
+        const user = await User.findById(userId);
+        const accessToken = user.generateAccessToken();
+        const refreshToken = user.generateRefreshToken();
 
-// function for registration of users
-async function registerUser(req, res) {
+        user.refreshToken = refreshToken;
+        await user.save({ validateBeforeSave: false });
 
+        return { accessToken, refreshToken };
+    } catch (error) {
+        throw new ApiError(500, "Something went wrong while generating refresh and access token");
+    }
+};
+
+const registerUser = asyncHandler(async (req, res) => {
     const { username, email, password, role } = req.body;
 
-    const isUserAlreadyExist = await userModel.findOne({
-        $or: [
-            { username },
-            { email }
-        ]
-    });
-
-    if (isUserAlreadyExist) {
-        return res.status(409).json({
-            message: "User already exists"
-        });
+    if (!username || !email || !password) {
+        throw new ApiError(400, "Username, email and password are required");
     }
-    const hashPassword = await bcrypt.hash(password, 10);
 
-    const user = await userModel.create({
-        username,
-        email,
-        password: hashPassword,
-        role: role || "user"
-    })
-    const token = jwt.sign({
-        id: user.id,
-        role: user.role,
-
-    }, process.env.JWT_SECRET)
-    res.cookie("token", token);
-    res.status(201).json({
-        message: "User registered successfully",
-        user: {
-            id: user.id,
-            username: user.username,
-            email: user.email,
-            role: user.role
-        }
+    const existedUser = await User.findOne({
+        $or: [{ username }, { email }]
     });
-}
-//function for login of users
 
-async function loginUser(req, res) {
-    const { email, password } = req.body;
+    if (existedUser) {
+        throw new ApiError(409, "User with email or username already exists");
+    }
 
-    const user = await userModel.findOne({ email });
+    const user = await User.create({
+        username: username.toLowerCase(),
+        email,
+        password,
+        role: role || "user"
+    });
+
+    const createdUser = await User.findById(user._id).select("-password -refreshToken");
+
+    if (!createdUser) {
+        throw new ApiError(500, "Something went wrong while registering the user");
+    }
+
+    // Auto login after register
+    const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(createdUser._id);
+    const options = { httpOnly: true, secure: process.env.NODE_ENV === "production" };
+
+    return res.status(201)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", refreshToken, options)
+        .json(new ApiResponse(201, { user: createdUser, accessToken, refreshToken }, "User registered successfully"));
+});
+
+const loginUser = asyncHandler(async (req, res) => {
+    const { email, username, password } = req.body;
+
+    if (!email && !username) {
+        throw new ApiError(400, "username or email is required");
+    }
+
+    const user = await User.findOne({
+        $or: [{ username }, { email }]
+    });
 
     if (!user) {
-        return res.status(401).json({
-            message: "Invalid email or password"
-        });
+        throw new ApiError(404, "User does not exist");
     }
 
-    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await user.isPasswordCorrect(password);
 
-    if (!isPasswordCorrect) {
-        return res.status(401).json({
-            message: "Invalid email or password"
-        });
+    if (!isPasswordValid) {
+        throw new ApiError(401, "Invalid user credentials");
     }
 
-    const token = jwt.sign({
-        id: user.id,
-        role: user.role,
-    }, process.env.JWT_SECRET);
+    const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
+    const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
+    const options = { httpOnly: true, secure: process.env.NODE_ENV === "production" };
 
-    res.cookie("token", token);
-    res.status(200).json({
-        message: "User logged in successfully",
-        user: {
-            id: user.id,
-            username: user.username,
-            email: user.email,
-            role: user.role
+    return res.status(200)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", refreshToken, options)
+        .json(new ApiResponse(200, { user: loggedInUser, accessToken, refreshToken }, "User logged in successfully"));
+});
+
+const logoutUser = asyncHandler(async (req, res) => {
+    await User.findByIdAndUpdate(
+        req.user._id,
+        { $unset: { refreshToken: 1 } },
+        { new: true }
+    );
+
+    const options = { httpOnly: true, secure: process.env.NODE_ENV === "production" };
+
+    return res.status(200)
+        .clearCookie("accessToken", options)
+        .clearCookie("refreshToken", options)
+        .json(new ApiResponse(200, {}, "User logged out"));
+});
+
+const refreshAccessToken = asyncHandler(async (req, res) => {
+    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
+
+    if (!incomingRefreshToken) {
+        throw new ApiError(401, "Unauthorized request");
+    }
+
+    try {
+        const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
+        const user = await User.findById(decodedToken?._id);
+
+        if (!user || incomingRefreshToken !== user?.refreshToken) {
+            throw new ApiError(401, "Refresh token is expired or used");
         }
-    });
-}
-async function logoutUser(req, res) {
-    res.clearCookie("token");
-    res.status(200).json({
-        message: "User logged out successfully"
-    });
-}
 
-module.exports = { registerUser, loginUser, logoutUser }
+        const options = { httpOnly: true, secure: process.env.NODE_ENV === "production" };
+        const { accessToken, refreshToken: newRefreshToken } = await generateAccessAndRefreshTokens(user._id);
+
+        return res.status(200)
+            .cookie("accessToken", accessToken, options)
+            .cookie("refreshToken", newRefreshToken, options)
+            .json(new ApiResponse(200, { accessToken, refreshToken: newRefreshToken }, "Access token refreshed"));
+    } catch (error) {
+        throw new ApiError(401, error?.message || "Invalid refresh token");
+    }
+});
+
+module.exports = { registerUser, loginUser, logoutUser, refreshAccessToken };

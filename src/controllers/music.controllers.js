@@ -1,67 +1,77 @@
-const musicModel = require("../models/music.model");
-const albumModel = require("../models/album.model");
-const jwt = require("jsonwebtoken");
-const { uploadFile } = require("../services/storage.service");
+const Song = require("../models/song.model");
+const { ApiError } = require("../utils/ApiError");
+const { ApiResponse } = require("../utils/ApiResponse");
+const { asyncHandler } = require("../utils/asyncHandler");
+const { uploadOnCloudinary } = require("../services/cloudinary.service");
+const https = require("https");
 
-// function for creating music 
-async function createMusic(req, res) {
-    const { file, title } = req.body;
-    const result = await uploadFile(file.buffer.toString("base64"), file.originalname);
-    const music = await musicModel.create({
-        uri: result.url,
+const uploadMusic = asyncHandler(async (req, res) => {
+    const { title } = req.body;
+
+    if (!title) {
+        throw new ApiError(400, "Title is required");
+    }
+
+    const audioFile = req.files?.audio?.[0];
+    const coverArtFile = req.files?.coverArt?.[0];
+
+    if (!audioFile) {
+        throw new ApiError(400, "Audio file is required");
+    }
+
+    if (!coverArtFile) {
+        throw new ApiError(400, "Cover art is required");
+    }
+
+    // Upload to Cloudinary
+    const audioUpload = await uploadOnCloudinary(audioFile.buffer, "spotify-clone/audio", "video");
+    const coverArtUpload = await uploadOnCloudinary(coverArtFile.buffer, "spotify-clone/covers", "image");
+
+    if (!audioUpload || !coverArtUpload) {
+        throw new ApiError(500, "Failed to upload files to cloud storage");
+    }
+
+    const song = await Song.create({
         title,
-        artist: req.user.id,
-    });
-    return res.status(201).json({
-        message: "Music created successfully",
-        music: {
-            id: music.id,
-            uri: music.uri,
-            title: music.title,
-            artist: music.artist
-        }
+        artist: req.user._id,
+        audioUrl: audioUpload.secure_url,
+        coverArt: coverArtUpload.secure_url,
+        duration: audioUpload.duration || 0
     });
 
+    return res.status(201).json(new ApiResponse(201, song, "Music uploaded successfully"));
+});
 
-}
-async function createAlbum(req, res) {
-    const { title, musicIds } = req.body;
-    const album = await albumModel.create({
-        title,
-        music: musicIds,
-        artist: req.user.id,
-    });
-    return res.status(201).json({
-        message: "Album created successfully",
-        album: {
-            id: album.id,
-            title: album.title,
-            music: album.music,
-            artist: album.artist
-        }
-    });
-}
-async function getAllMusics(req, res) {
-    const musics = await (await musicModel.find().skip(1).limit(2)).populate("artist", "name");
-    return res.status(200).json({
-        message: "Musics fetched successfully",
-        musics
-    });
-}
-async function getAlbum(req, res) {
-    const albums = await albumModel.find().populate("artist", "name").select("artist", "title");
-    return res.status(200).json({
-        message: "Albums fetched successfully",
-        albums
-    });
-}
-async function getAlbumById(req, res) {
-    const album = await albumModel.findById(req.params.albumId).populate("artist", "name").select("artist", "title");
-    return res.status(200).json({
-        message: "Album fetched successfully",
-        album
-    });
-}
+const getAllMusic = asyncHandler(async (req, res) => {
+    const songs = await Song.find().populate("artist", "username profileImage").sort("-createdAt");
+    return res.status(200).json(new ApiResponse(200, songs, "Music fetched successfully"));
+});
 
+const streamMusic = asyncHandler(async (req, res, next) => {
+    const songId = req.params.id;
+    const song = await Song.findById(songId);
 
-module.exports = { createMusic, createAlbum, getAllMusics, getAlbum, getAlbumById };
+    if (!song) {
+        throw new ApiError(404, "Song not found");
+    }
+
+    const audioUrl = song.audioUrl;
+    const range = req.headers.range;
+
+    const options = {
+        headers: {}
+    };
+
+    if (range) {
+        options.headers["Range"] = range;
+    }
+
+    https.get(audioUrl, options, (proxyRes) => {
+        res.writeHead(proxyRes.statusCode, proxyRes.headers);
+        proxyRes.pipe(res);
+    }).on("error", (err) => {
+        next(new ApiError(500, "Error streaming audio proxy: " + err.message));
+    });
+});
+
+module.exports = { uploadMusic, getAllMusic, streamMusic };

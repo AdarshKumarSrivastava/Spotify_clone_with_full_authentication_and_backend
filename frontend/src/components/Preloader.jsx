@@ -47,11 +47,11 @@ export default function Preloader({ onComplete }) {
     const pct = pctRef.current;
 
     const milestones = [
-      { target: 30,  duration: 600  },
-      { target: 58,  duration: 700  },
-      { target: 75,  duration: 500  },
-      { target: 89,  duration: 600  },
-      { target: 100, duration: 500  },
+      { target: 30, duration: 600 },
+      { target: 58, duration: 700 },
+      { target: 75, duration: 500 },
+      { target: 89, duration: 600 },
+      { target: 100, duration: 500 },
     ];
 
     function animateTo(target, duration, callback) {
@@ -59,7 +59,7 @@ export default function Preloader({ onComplete }) {
       const startTime = performance.now();
 
       function tick(now) {
-        if(isDone) return;
+        if (isDone) return;
         const elapsed = now - startTime;
         const t = Math.min(elapsed / duration, 1);
         const eased = 1 - Math.pow(1 - t, 3);
@@ -97,7 +97,7 @@ export default function Preloader({ onComplete }) {
       isDone = true;
       setDone(true);
       setShowWelcome(true); // Fade in the welcome screen behind the 3D scene
-      
+
       setTimeout(() => {
         if (preloaderRef.current) {
           preloaderRef.current.classList.add('hide'); // Hide 3D scene to reveal welcome screen
@@ -160,7 +160,7 @@ export default function Preloader({ onComplete }) {
       <div className={`welcome-screen ${showWelcome ? 'show' : ''}`}>
         <p className="demo-text">
           <span className="welcome-part">Welcome to</span>
-          <span className="spotify-part">Spotify</span>
+          <span className="spotify-part">SpoTify</span>
         </p>
       </div>
 
@@ -168,72 +168,72 @@ export default function Preloader({ onComplete }) {
         <div className="glow-orb"></div>
         <div className="glow-orb-2"></div>
 
-      <div className="scene" ref={sceneRef}>
-        <div className="cards-container">
-          <div className="album-card card-1">
-            <div className="art-1">
-              <div className="face-circle"></div>
-              <div className="card-title">Big Brulee</div>
-            </div>
-          </div>
-          <div className="album-card card-2">
-            <div className="art-2">
-              <div className="illum-text">Illuminati</div>
-              <div className="tri"></div>
-              <div className="figure">
-                <div className="figure-shape"></div>
+        <div className="scene" ref={sceneRef}>
+          <div className="cards-container">
+            <div className="album-card card-1">
+              <div className="art-1">
+                <div className="face-circle"></div>
+                <div className="card-title">Big Brulee</div>
               </div>
-              <div className="card-title">Badshah · Dazzer</div>
             </div>
-          </div>
-          <div className="album-card card-3">
-            <div className="art-3">
-              <div className="face-shape"></div>
-              <div className="card-title">Dazzer</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="folder-wrap">
-          <div className="folder-tab"></div>
-          <div className="folder-body">
-            <div className="folder-shimmer"></div>
-            <div className="spotify-brand">
-              <div className="sp-icon">
-                <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.586 14.424a.622.622 0 01-.857.207c-2.348-1.435-5.304-1.76-8.785-.964a.623.623 0 01-.277-1.215c3.809-.87 7.076-.496 9.712 1.115a.623.623 0 01.207.857zm1.223-2.722a.78.78 0 01-1.072.257c-2.687-1.652-6.785-2.131-9.965-1.166a.78.78 0 01-.973-.519.781.781 0 01.519-.972c3.632-1.102 8.147-.568 11.234 1.328a.78.78 0 01.257 1.072zm.105-2.835C14.692 8.95 9.375 8.775 6.297 9.71a.937.937 0 11-.543-1.79c3.527-1.072 9.396-.865 13.105 1.338a.937.937 0 01-.945 1.609z"/>
-                </svg>
+            <div className="album-card card-2">
+              <div className="art-2">
+                <div className="illum-text">Illuminati</div>
+                <div className="tri"></div>
+                <div className="figure">
+                  <div className="figure-shape"></div>
+                </div>
+                <div className="card-title">Badshah · Dazzer</div>
               </div>
-              <span className="sp-wordmark">spotify</span>
+            </div>
+            <div className="album-card card-3">
+              <div className="art-3">
+                <div className="face-shape"></div>
+                <div className="card-title">Dazzer</div>
+              </div>
             </div>
           </div>
+
+          <div className="folder-wrap">
+            <div className="folder-tab"></div>
+            <div className="folder-body">
+              <div className="folder-shimmer"></div>
+              <div className="spotify-brand">
+                <div className="sp-icon">
+                  <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.586 14.424a.622.622 0 01-.857.207c-2.348-1.435-5.304-1.76-8.785-.964a.623.623 0 01-.277-1.215c3.809-.87 7.076-.496 9.712 1.115a.623.623 0 01.207.857zm1.223-2.722a.78.78 0 01-1.072.257c-2.687-1.652-6.785-2.131-9.965-1.166a.78.78 0 01-.973-.519.781.781 0 01.519-.972c3.632-1.102 8.147-.568 11.234 1.328a.78.78 0 01.257 1.072zm.105-2.835C14.692 8.95 9.375 8.775 6.297 9.71a.937.937 0 11-.543-1.79c3.527-1.072 9.396-.865 13.105 1.338a.937.937 0 01-.945 1.609z" />
+                  </svg>
+                </div>
+                <span className="sp-wordmark">spoTify</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="reflection"></div>
         </div>
 
-        <div className="reflection"></div>
-      </div>
-
-      <div className="cursor-arrow">
-        <svg viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="arrowGrad" x1="6" y1="4" x2="44" y2="50" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="rgba(180,255,200,0.5)"/>
-              <stop offset="100%" stopColor="rgba(29,185,84,0.05)"/>
-            </linearGradient>
-          </defs>
-          <path d="M10 8L44 26L26 31L17 47L10 8Z" fill="rgba(0,0,0,0.3)" transform="translate(2,3)"/>
-          <path d="M10 8L44 26L26 31L17 47L10 8Z" fill="rgba(90,230,130,0.92)" stroke="rgba(150,255,170,0.55)" strokeWidth="1.5" strokeLinejoin="round"/>
-          <path d="M10 8L44 26L26 31L17 47L10 8Z" fill="url(#arrowGrad)"/>
-        </svg>
-      </div>
-
-      <div className="loader-ui">
-        <div className="loader-label">Loading</div>
-        <div className="loader-track">
-          <div className="loader-fill" id="loaderFill" ref={fillRef}></div>
+        <div className="cursor-arrow">
+          <svg viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="arrowGrad" x1="6" y1="4" x2="44" y2="50" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="rgba(180,255,200,0.5)" />
+                <stop offset="100%" stopColor="rgba(29,185,84,0.05)" />
+              </linearGradient>
+            </defs>
+            <path d="M10 8L44 26L26 31L17 47L10 8Z" fill="rgba(0,0,0,0.3)" transform="translate(2,3)" />
+            <path d="M10 8L44 26L26 31L17 47L10 8Z" fill="rgba(90,230,130,0.92)" stroke="rgba(150,255,170,0.55)" strokeWidth="1.5" strokeLinejoin="round" />
+            <path d="M10 8L44 26L26 31L17 47L10 8Z" fill="url(#arrowGrad)" />
+          </svg>
         </div>
-        <div className="loader-percent" id="loaderPercent" ref={pctRef}>0%</div>
+
+        <div className="loader-ui">
+          <div className="loader-label">Loading</div>
+          <div className="loader-track">
+            <div className="loader-fill" id="loaderFill" ref={fillRef}></div>
+          </div>
+          <div className="loader-percent" id="loaderPercent" ref={pctRef}>0%</div>
+        </div>
       </div>
-    </div>
     </>
   );
 }

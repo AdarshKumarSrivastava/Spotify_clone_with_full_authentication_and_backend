@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Play, Heart, MoreHorizontal, Search, Home as HomeIcon, Library } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { usePlayer } from '../context/PlayerContext';
 
 const Sidebar = ({ currentView, setCurrentView }) => {
   const nav = useNavigate();
@@ -21,13 +22,14 @@ const Sidebar = ({ currentView, setCurrentView }) => {
   );
 };
 
-const AlbumCard = ({ title, artist, image, color, delay }) => {
+const AlbumCard = ({ title, artist, image, color, delay, onClick }) => {
   return (
     <motion.div 
       initial={{ opacity: 0, y: 50 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.8, ease: "easeOut" }}
       whileHover={{ y: -10, scale: 1.05 }}
+      onClick={onClick}
       className="custom-cursor-target"
       style={{
         width: '200px',
@@ -54,20 +56,21 @@ const AlbumCard = ({ title, artist, image, color, delay }) => {
 };
 
 const dummyAlbums = [
-  { title: "Midnight City", artist: "M83", color: "#ff3366", image: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=400&h=400" },
-  { title: "Starboy", artist: "The Weeknd", color: "#33ccff", image: "https://images.unsplash.com/photo-1493225457124-a1a2a5956093?auto=format&fit=crop&q=80&w=400&h=400" },
-  { title: "Currents", artist: "Tame Impala", color: "#ffcc00", image: "https://images.unsplash.com/photo-1619983081563-430f63602796?auto=format&fit=crop&q=80&w=400&h=400" },
-  { title: "Discovery", artist: "Daft Punk", color: "#cc33ff", image: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&q=80&w=400&h=400" },
-  { title: "Utopia", artist: "Travis Scott", color: "#33ffcc", image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=400&h=400" },
-  { title: "After Hours", artist: "The Weeknd", color: "#ff0000", image: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&q=80&w=400&h=400" },
-  { title: "Graduation", artist: "Kanye West", color: "#ff00ff", image: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&q=80&w=400&h=400" },
-  { title: "Blonde", artist: "Frank Ocean", color: "#ffff00", image: "https://images.unsplash.com/photo-1516280440502-86927a3f45f9?auto=format&fit=crop&q=80&w=400&h=400" }
+  { title: "Midnight City", artist: "M83", color: "#ff3366", image: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=400&h=400", audioUrl: "/music/song1.mp3" },
+  { title: "Starboy", artist: "The Weeknd", color: "#33ccff", image: "https://images.unsplash.com/photo-1493225457124-a1a2a5956093?auto=format&fit=crop&q=80&w=400&h=400", audioUrl: "/music/song1.mp3" },
+  { title: "Currents", artist: "Tame Impala", color: "#ffcc00", image: "https://images.unsplash.com/photo-1619983081563-430f63602796?auto=format&fit=crop&q=80&w=400&h=400", audioUrl: "/music/song1.mp3" },
+  { title: "Discovery", artist: "Daft Punk", color: "#cc33ff", image: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&q=80&w=400&h=400", audioUrl: "/music/song1.mp3" },
+  { title: "Utopia", artist: "Travis Scott", color: "#33ffcc", image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=400&h=400", audioUrl: "/music/song1.mp3" },
+  { title: "After Hours", artist: "The Weeknd", color: "#ff0000", image: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&q=80&w=400&h=400", audioUrl: "/music/song1.mp3" },
+  { title: "Graduation", artist: "Kanye West", color: "#ff00ff", image: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&q=80&w=400&h=400", audioUrl: "/music/song1.mp3" },
+  { title: "Blonde", artist: "Frank Ocean", color: "#ffff00", image: "https://images.unsplash.com/photo-1516280440502-86927a3f45f9?auto=format&fit=crop&q=80&w=400&h=400", audioUrl: "/music/song1.mp3" }
 ];
 
 export default function Home() {
   const [musics, setMusics] = useState(dummyAlbums);
   const [currentView, setCurrentView] = useState('home');
   const [searchQuery, setSearchQuery] = useState('');
+  const { playSong } = usePlayer();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -78,11 +81,12 @@ export default function Home() {
       .then(data => {
         if (data && data.length > 0) {
           // Map backend music data to our UI format
-          setMusics(data.map((m, i) => ({
+          setMusics(data.data.map((m, i) => ({
             title: m.title || "Unknown Title",
             artist: m.artist?.username || "Unknown Artist",
             color: dummyAlbums[i % dummyAlbums.length].color,
-            image: dummyAlbums[i % dummyAlbums.length].image
+            image: m.coverArt || dummyAlbums[i % dummyAlbums.length].image,
+            audioUrl: `/api/music/stream/${m._id}`
           })));
         } else {
           setMusics(dummyAlbums);
@@ -131,7 +135,7 @@ export default function Home() {
             <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '24px' }}>Featured Albums</h2>
             <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
               {musics.map((album, index) => (
-                <AlbumCard key={index} title={album.title} artist={album.artist} image={album.image} color={album.color} delay={1 + index * 0.1} />
+                <AlbumCard key={index} title={album.title} artist={album.artist} image={album.image} color={album.color} delay={1 + index * 0.1} onClick={() => playSong(album)} />
               ))}
             </div>
           </>
@@ -165,7 +169,7 @@ export default function Home() {
             <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '24px' }}>Browse All</h2>
             <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
               {musics.filter(m => m.title.toLowerCase().includes(searchQuery.toLowerCase()) || m.artist.toLowerCase().includes(searchQuery.toLowerCase())).map((album, index) => (
-                <AlbumCard key={index} title={album.title} artist={album.artist} image={album.image} color={album.color} delay={0.1 + index * 0.05} />
+                <AlbumCard key={index} title={album.title} artist={album.artist} image={album.image} color={album.color} delay={0.1 + index * 0.05} onClick={() => playSong(album)} />
               ))}
             </div>
           </motion.div>
@@ -177,7 +181,7 @@ export default function Home() {
             <p style={{ color: 'var(--color-text-muted)', fontSize: '1.2rem', marginBottom: '40px' }}>Your favorite tunes in one place.</p>
             <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
               {musics.slice(0, 4).map((album, index) => (
-                <AlbumCard key={index} title={album.title} artist={album.artist} image={album.image} color={album.color} delay={0.1 + index * 0.05} />
+                <AlbumCard key={index} title={album.title} artist={album.artist} image={album.image} color={album.color} delay={0.1 + index * 0.05} onClick={() => playSong(album)} />
               ))}
             </div>
           </motion.div>

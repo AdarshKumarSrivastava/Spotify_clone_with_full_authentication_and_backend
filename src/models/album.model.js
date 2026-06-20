@@ -4,18 +4,22 @@ const albumSchema = new mongoose.Schema({
     title: {
         type: String,
         required: true,
-    },
-    musics: {
-        type: [mongoose.Schema.Types.ObjectId],
-        ref: "music",
+        trim: true,
+        index: true
     },
     artist: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "user",
-        required: true,
+        ref: "User",
+        required: true
+    },
+    coverArt: {
+        type: String, // Cloudinary URL
+        required: true
+    },
+    releaseYear: {
+        type: Number,
+        required: true
     }
-})
+}, { timestamps: true });
 
-const albumModel = mongoose.model("album", albumSchema);
-
-module.exports = albumModel;
+module.exports = mongoose.model("Album", albumSchema);

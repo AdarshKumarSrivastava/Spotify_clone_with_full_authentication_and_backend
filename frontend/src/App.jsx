@@ -7,6 +7,7 @@ import MusicPlayer from './components/MusicPlayer';
 import Login from './components/Login';
 import Register from './components/Register';
 import ArtistDashboard from './components/ArtistDashboard';
+import { PlayerProvider } from './context/PlayerContext';
 
 const CustomCursor = () => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -48,8 +49,9 @@ function App() {
   };
 
   return (
-    <Router>
-      <CustomCursor />
+    <PlayerProvider>
+      <Router>
+        <CustomCursor />
       <AnimatePresence mode="wait">
         {loading ? (
           <Preloader key="preloader" onComplete={handlePreloaderComplete} />
@@ -68,7 +70,8 @@ function App() {
           </Routes>
         )}
       </AnimatePresence>
-    </Router>
+      </Router>
+    </PlayerProvider>
   );
 }
 
