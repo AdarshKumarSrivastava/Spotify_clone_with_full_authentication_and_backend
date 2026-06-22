@@ -55,14 +55,14 @@ const AlbumCard = ({ title, artist, image, color, delay, onClick }) => {
 };
 
 const dummyAlbums = [
-  { title: "Midnight City", artist: "M83", color: "#ff3366", image: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=400&h=400", audioUrl: "/music/song1.mp3" },
-  { title: "Starboy", artist: "The Weeknd", color: "#33ccff", image: "https://images.unsplash.com/photo-1493225457124-a1a2a5956093?auto=format&fit=crop&q=80&w=400&h=400", audioUrl: "/music/song1.mp3" },
-  { title: "Currents", artist: "Tame Impala", color: "#ffcc00", image: "https://images.unsplash.com/photo-1619983081563-430f63602796?auto=format&fit=crop&q=80&w=400&h=400", audioUrl: "/music/song1.mp3" },
-  { title: "Discovery", artist: "Daft Punk", color: "#cc33ff", image: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&q=80&w=400&h=400", audioUrl: "/music/song1.mp3" },
-  { title: "Utopia", artist: "Travis Scott", color: "#33ffcc", image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=400&h=400", audioUrl: "/music/song1.mp3" },
-  { title: "After Hours", artist: "The Weeknd", color: "#ff0000", image: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&q=80&w=400&h=400", audioUrl: "/music/song1.mp3" },
-  { title: "Graduation", artist: "Kanye West", color: "#ff00ff", image: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&q=80&w=400&h=400", audioUrl: "/music/song1.mp3" },
-  { title: "Blonde", artist: "Frank Ocean", color: "#ffff00", image: "https://images.unsplash.com/photo-1516280440502-86927a3f45f9?auto=format&fit=crop&q=80&w=400&h=400", audioUrl: "/music/song1.mp3" }
+  { id: 'dummy1', title: "Midnight City", artist: "M83", color: "#ff3366", image: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=400&h=400", audioUrl: "/music/song1.mp3?id=dummy1" },
+  { id: 'dummy2', title: "Starboy", artist: "The Weeknd", color: "#33ccff", image: "https://images.unsplash.com/photo-1493225457124-a1a2a5956093?auto=format&fit=crop&q=80&w=400&h=400", audioUrl: "/music/song1.mp3?id=dummy2" },
+  { id: 'dummy3', title: "Currents", artist: "Tame Impala", color: "#ffcc00", image: "https://images.unsplash.com/photo-1619983081563-430f63602796?auto=format&fit=crop&q=80&w=400&h=400", audioUrl: "/music/song1.mp3?id=dummy3" },
+  { id: 'dummy4', title: "Discovery", artist: "Daft Punk", color: "#cc33ff", image: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&q=80&w=400&h=400", audioUrl: "/music/song1.mp3?id=dummy4" },
+  { id: 'dummy5', title: "Utopia", artist: "Travis Scott", color: "#33ffcc", image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=400&h=400", audioUrl: "/music/song1.mp3?id=dummy5" },
+  { id: 'dummy6', title: "After Hours", artist: "The Weeknd", color: "#ff0000", image: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&q=80&w=400&h=400", audioUrl: "/music/song1.mp3?id=dummy6" },
+  { id: 'dummy7', title: "Graduation", artist: "Kanye West", color: "#ff00ff", image: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&q=80&w=400&h=400", audioUrl: "/music/song1.mp3?id=dummy7" },
+  { id: 'dummy8', title: "Blonde", artist: "Frank Ocean", color: "#ffff00", image: "https://images.unsplash.com/photo-1516280440502-86927a3f45f9?auto=format&fit=crop&q=80&w=400&h=400", audioUrl: "/music/song1.mp3?id=dummy8" }
 ];
 
 export default function Home() {
@@ -78,9 +78,10 @@ export default function Home() {
     fetch('/api/music', { signal: controller.signal })
       .then(res => res.json())
       .then(data => {
-        if (data && data.length > 0) {
+        if (data && data.data && data.data.length > 0) {
           // Map backend music data to our UI format
           setMusics(data.data.map((m, i) => ({
+            id: m._id,
             title: m.title || "Unknown Title",
             artist: m.artist?.username || "Unknown Artist",
             color: dummyAlbums[i % dummyAlbums.length].color,

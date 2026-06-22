@@ -20,7 +20,7 @@ export const PlayerProvider = ({ children }) => {
   }, [isPlaying, currentSong]);
 
   const playSong = (song) => {
-    if (currentSong?.title === song.title) {
+    if ((currentSong?.id && currentSong.id === song.id) || currentSong?.audioUrl === song.audioUrl) {
       setIsPlaying(!isPlaying);
     } else {
       setCurrentSong(song);
