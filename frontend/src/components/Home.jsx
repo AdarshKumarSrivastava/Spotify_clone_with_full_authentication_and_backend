@@ -4,6 +4,14 @@ import { Play, Heart, MoreHorizontal, Search, Home as HomeIcon, Library, LogOut 
 import { useNavigate } from 'react-router-dom';
 import { usePlayer } from '../context/PlayerContext';
 
+const SkeletonCard = () => (
+  <div className="album-card skeleton-card glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+    <div className="skeleton-img" style={{ width: '100%', height: '168px', borderRadius: '12px', background: 'rgba(255,255,255,0.1)' }} />
+    <div className="skeleton-text" style={{ width: '80%', height: '16px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)' }} />
+    <div className="skeleton-text" style={{ width: '50%', height: '14px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)' }} />
+  </div>
+);
+
 const Sidebar = ({ currentView, setCurrentView }) => {
   const nav = useNavigate();
   return (
@@ -67,6 +75,7 @@ const dummyAlbums = [
 
 export default function Home() {
   const [musics, setMusics] = useState(dummyAlbums);
+  const [loading, setLoading] = useState(true);
   const [currentView, setCurrentView] = useState('home');
   const [searchQuery, setSearchQuery] = useState('');
   const { playSong } = usePlayer();
@@ -75,12 +84,14 @@ export default function Home() {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 1500);
 
+    setLoading(true);
     fetch('/api/music', { signal: controller.signal })
       .then(res => res.json())
       .then(data => {
-        if (data && data.data && data.data.length > 0) {
+        const musicList = data?.data?.data || data?.data; // Handle both new pagination and old payload formats
+        if (musicList && musicList.length > 0) {
           // Map backend music data to our UI format
-          setMusics(data.data.map((m, i) => ({
+          setMusics(musicList.map((m, i) => ({
             id: m._id,
             title: m.title || "Unknown Title",
             artist: m.artist?.username || "Unknown Artist",
@@ -96,7 +107,10 @@ export default function Home() {
         console.warn("Backend fetch failed/timed out, using offline mock data.");
         setMusics(dummyAlbums);
       })
-      .finally(() => clearTimeout(timeoutId));
+      .finally(() => {
+        setLoading(false);
+        clearTimeout(timeoutId);
+      });
   }, []);
 
   return (
@@ -130,10 +144,14 @@ export default function Home() {
             <p style={{ color: 'var(--color-text-muted)', fontSize: '1.2rem', marginBottom: '40px' }}>Discover the future of sound.</p>
 
             <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '24px' }}>Featured Albums</h2>
-            <div className="albums-grid" style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
-              {musics.map((album, index) => (
-                <AlbumCard key={index} title={album.title} artist={album.artist} image={album.image} color={album.color} delay={1 + index * 0.1} onClick={() => playSong(album)} />
-              ))}
+            <div className="albums-grid">
+              {loading ? (
+                Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
+              ) : (
+                musics.map((album, index) => (
+                  <AlbumCard key={index} title={album.title} artist={album.artist} image={album.image} color={album.color} delay={0.1 + index * 0.05} onClick={() => playSong(album)} />
+                ))
+              )}
             </div>
           </>
         )}
@@ -164,10 +182,14 @@ export default function Home() {
             </div>
 
             <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '24px' }}>Browse All</h2>
-            <div className="albums-grid" style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
-              {musics.filter(m => m.title.toLowerCase().includes(searchQuery.toLowerCase()) || m.artist.toLowerCase().includes(searchQuery.toLowerCase())).map((album, index) => (
-                <AlbumCard key={index} title={album.title} artist={album.artist} image={album.image} color={album.color} delay={0.1 + index * 0.05} onClick={() => playSong(album)} />
-              ))}
+            <div className="albums-grid">
+              {loading ? (
+                Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
+              ) : (
+                musics.filter(m => m.title.toLowerCase().includes(searchQuery.toLowerCase()) || m.artist.toLowerCase().includes(searchQuery.toLowerCase())).map((album, index) => (
+                  <AlbumCard key={index} title={album.title} artist={album.artist} image={album.image} color={album.color} delay={0.1 + index * 0.05} onClick={() => playSong(album)} />
+                ))
+              )}
             </div>
           </motion.div>
         )}
@@ -176,10 +198,14 @@ export default function Home() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
             <h1 style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '8px', color: 'var(--color-text-main)' }}>Your Library</h1>
             <p style={{ color: 'var(--color-text-muted)', fontSize: '1.2rem', marginBottom: '40px' }}>Your favorite tunes in one place.</p>
-            <div className="albums-grid" style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
-              {musics.slice(0, 4).map((album, index) => (
-                <AlbumCard key={index} title={album.title} artist={album.artist} image={album.image} color={album.color} delay={0.1 + index * 0.05} onClick={() => playSong(album)} />
-              ))}
+            <div className="albums-grid">
+              {loading ? (
+                Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
+              ) : (
+                musics.slice(0, 4).map((album, index) => (
+                  <AlbumCard key={index} title={album.title} artist={album.artist} image={album.image} color={album.color} delay={0.1 + index * 0.05} onClick={() => playSong(album)} />
+                ))
+              )}
             </div>
           </motion.div>
         )}

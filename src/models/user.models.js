@@ -30,6 +30,20 @@ const userSchema = new mongoose.Schema({
         type: String, // Cloudinary URL
         default: ""
     },
+    likedSongs: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Music"
+    }],
+    recentlyPlayed: [{
+        song: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Music"
+        },
+        playedAt: {
+            type: Date,
+            default: Date.now
+        }
+    }],
     refreshToken: {
         type: String
     }

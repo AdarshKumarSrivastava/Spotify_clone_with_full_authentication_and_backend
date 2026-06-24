@@ -43,8 +43,35 @@ const uploadMusic = asyncHandler(async (req, res) => {
 });
 
 const getAllMusic = asyncHandler(async (req, res) => {
-    const songs = await Song.find().populate("artist", "username profileImage").sort("-createdAt");
-    return res.status(200).json(new ApiResponse(200, songs, "Music fetched successfully"));
+    const { query, page = 1, limit = 20 } = req.query;
+    
+    let filter = {};
+    if (query) {
+        filter = {
+            $or: [
+                { title: { $regex: query, $options: "i" } }
+            ]
+        };
+    }
+
+    const skip = (page - 1) * limit;
+
+    const songs = await Song.find(filter)
+        .populate("artist", "username profileImage")
+        .sort("-createdAt")
+        .skip(skip)
+        .limit(parseInt(limit));
+
+    const total = await Song.countDocuments(filter);
+
+    return res.status(200).json(new ApiResponse(200, {
+        data: songs,
+        pagination: {
+            total,
+            page: parseInt(page),
+            pages: Math.ceil(total / limit)
+        }
+    }, "Music fetched successfully"));
 });
 
 const streamMusic = asyncHandler(async (req, res, next) => {
