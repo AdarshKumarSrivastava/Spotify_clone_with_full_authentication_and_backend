@@ -89,8 +89,9 @@ export default function Register() {
           </div>
           
           <motion.button 
-            whileHover={{ scale: 1.02, background: '#1ed760' }} whileTap={{ scale: 0.98 }}
-            style={{ padding: '16px', borderRadius: '12px', background: 'var(--color-spotify-green)', color: 'black', fontWeight: 700, fontSize: '1rem', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '12px' }}
+            className="glass-btn custom-cursor-target"
+            type="submit"
+            style={{ marginTop: '12px', width: '100%' }}
           >
             Sign Up <ArrowRight size={20} />
           </motion.button>
